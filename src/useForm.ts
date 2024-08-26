@@ -25,10 +25,11 @@ const defaultFormatErrorMessage = (error: ZodError) =>
 
 export const useForm = <TSchema extends ZodRawShape>(
   schema: ZodObject<TSchema>,
-  upstreamData: Partial<z.infer<ZodObject<TSchema>>> = {},
+  upstreamData: Partial<TSchema> = {},
   config: UseFormConfig<TSchema> = {}
 ) => {
-  type TFieldName = keyof typeof schema.shape
+  type TFieldName = keyof TSchema
+  const fieldKeys = Object.keys(schema.shape) as TFieldName[]
 
   const {
     defaultShowValidationOn = 'touched',
@@ -36,7 +37,7 @@ export const useForm = <TSchema extends ZodRawShape>(
     formatErrorMessage = defaultFormatErrorMessage,
   } = config
 
-  const initTouched = Object.keys(schema.shape).reduce(
+  const initTouched = fieldKeys.reduce(
     (acc, key: TFieldName) => {
       acc[key] =
         typeof config.initTouched === 'boolean'
@@ -59,34 +60,13 @@ export const useForm = <TSchema extends ZodRawShape>(
     }))
   }
 
-  const touchAll = () => {
-    setTouchedFields(
-      Object.keys(schema.shape).reduce(
-        (acc, key: TFieldName) => {
-          acc[key] = true
-          return acc
-        },
-        {} as Record<TFieldName, boolean>
-      )
-    )
-  }
-
-  const resetTouched = () => setTouchedFields(initTouched)
-
   const isDiff = (fieldName: TFieldName) => {
     return diff[fieldName] !== undefined
   }
 
   const getUpstreamValue = (fieldName: TFieldName) => upstreamData[fieldName]
 
-  const getValue = (fieldName: TFieldName) =>
-    diff[fieldName] ?? getUpstreamValue(fieldName)
-
-  const dirtyFieldsArray = (Object.keys(schema.shape) as TFieldName[]).filter(
-    isDiff
-  )
-
-  const fieldErrors = (Object.keys(schema.shape) as TFieldName[]).reduce(
+  const fieldErrors = fieldKeys.reduce(
     (acc, key) => {
       const itemSchema = schema.shape[key]
       const result = itemSchema.safeParse(getValue(key))
@@ -98,10 +78,35 @@ export const useForm = <TSchema extends ZodRawShape>(
     {} as Record<TFieldName, ZodError | undefined>
   )
 
+  const formValues = fieldKeys.reduce(
+    (acc, key) => {
+      acc[key] = diff[key] ?? getUpstreamValue(key)
+      return acc
+    },
+    {} as Record<TFieldName, any>
+  )
+
+  const getValue = (fieldName: TFieldName) => formValues[fieldName]
+
   const getError = (fieldName: TFieldName) => fieldErrors[fieldName]
+
+  const touchAll = () => {
+    setTouchedFields(
+      fieldKeys.reduce(
+        (acc, key: TFieldName) => {
+          acc[key] = true
+          return acc
+        },
+        {} as Record<TFieldName, boolean>
+      )
+    )
+  }
+
+  const resetTouched = () => setTouchedFields(initTouched)
 
   const ctx: UseFieldCtx<typeof schema.shape> = {
     schema,
+    formValues,
     isDirty: isDiff,
     isTouched,
     getValue,
@@ -118,15 +123,7 @@ export const useForm = <TSchema extends ZodRawShape>(
     onSubmit,
     onError
   ) => {
-    const fields = Object.keys(schema.shape).reduce(
-      (acc, key: TFieldName) => {
-        acc[key] = getValue(key)
-        return acc
-      },
-      {} as Record<TFieldName, any>
-    )
-
-    const result = schema.safeParse(fields)
+    const result = schema.safeParse(formValues)
 
     if (result.success) {
       onSubmit(result.data)
@@ -140,10 +137,12 @@ export const useForm = <TSchema extends ZodRawShape>(
     setDiff({})
   }
 
+  const formDirty = fieldKeys.filter(isDiff).length > 0
+
   return {
     ctx,
     formProps: { noValidate: true as const },
-    formDirty: dirtyFieldsArray.length > 0,
+    formDirty,
     reset,
     handleSubmit,
     touchAll,
@@ -157,7 +156,7 @@ export const useForm = <TSchema extends ZodRawShape>(
       ) => z.infer<(typeof schema.shape)[TName]>,
     >(
       name: TName,
-      options?: UseFieldOptions<TChangeFn>
+      options?: UseFieldOptions<TChangeFn, TSchema>
     ) => useField(ctx, name, options),
   }
 }

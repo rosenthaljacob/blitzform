@@ -28,8 +28,12 @@ export type FieldProps<T, TChangeFn> = {
 type ChangeFn = (...args: any[]) => any
 type DefaultChangeFn = (e: ChangeEvent<HTMLElement>) => string
 
-export type UseFieldOptions<TChangeFn extends ChangeFn = DefaultChangeFn> = {
+export type UseFieldOptions<
+  TChangeFn extends ChangeFn = DefaultChangeFn,
+  TSchema extends ZodRawShape = ZodRawShape,
+> = {
   disabled?: boolean
+  disabledIf?: (formState: TSchema) => boolean
   showValidationOn?: ShowValidationOn
   unTouchOn?: UntouchOn
   parseValue?: TChangeFn
@@ -38,6 +42,7 @@ export type UseFieldOptions<TChangeFn extends ChangeFn = DefaultChangeFn> = {
 
 export type UseFieldCtx<TSchema extends ZodRawShape> = {
   schema: ZodObject<TSchema>
+  formValues: Record<keyof TSchema, any>
   isDirty: (fieldName: keyof TSchema) => boolean
   isTouched: (fieldName: keyof TSchema) => boolean
   getValue: (fieldName: keyof TSchema) => any
@@ -62,7 +67,7 @@ type UseField = <
 >(
   ctx: UseFieldCtx<TSchema>,
   name: TKey,
-  options?: UseFieldOptions<TChangeFn>
+  options?: UseFieldOptions<TChangeFn, TSchema>
 ) => FieldProps<TValue, TChangeFn>
 
 const defaultIsEqual = (a: unknown, b: unknown) => a === b
@@ -70,6 +75,7 @@ const defaultIsEqual = (a: unknown, b: unknown) => a === b
 const useField: UseField = (ctx, name, options = {}) => {
   const {
     schema,
+    formValues,
     isDirty,
     getValue,
     getError,
@@ -87,6 +93,7 @@ const useField: UseField = (ctx, name, options = {}) => {
     showValidationOn = defaultShowValidationOn,
     unTouchOn = defaultUntouchOn,
     parseValue,
+    disabledIf,
     isEqual = defaultIsEqual,
   } = options
 
@@ -129,7 +136,7 @@ const useField: UseField = (ctx, name, options = {}) => {
 
   const inputProps: FieldInputProps<typeof onChange> = {
     value: getValue(name),
-    disabled,
+    disabled: disabled ? true : (disabledIf?.(formValues) ?? false),
     required: !schema.shape[name].isOptional(),
     name: name as string,
     'data-valid': valid,
