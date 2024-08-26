@@ -63,8 +63,17 @@ export const useForm = <TSchema extends ZodRawShape>(
   const isDiff = (fieldName: TFieldName) => {
     return diff[fieldName] !== undefined
   }
-
   const getUpstreamValue = (fieldName: TFieldName) => upstreamData[fieldName]
+
+  const formValues = fieldKeys.reduce(
+    (acc, key) => {
+      acc[key] = diff[key] ?? getUpstreamValue(key)
+      return acc
+    },
+    {} as Record<TFieldName, any>
+  )
+
+  const getValue = (fieldName: TFieldName) => formValues[fieldName]
 
   const fieldErrors = fieldKeys.reduce(
     (acc, key) => {
@@ -77,16 +86,6 @@ export const useForm = <TSchema extends ZodRawShape>(
     },
     {} as Record<TFieldName, ZodError | undefined>
   )
-
-  const formValues = fieldKeys.reduce(
-    (acc, key) => {
-      acc[key] = diff[key] ?? getUpstreamValue(key)
-      return acc
-    },
-    {} as Record<TFieldName, any>
-  )
-
-  const getValue = (fieldName: TFieldName) => formValues[fieldName]
 
   const getError = (fieldName: TFieldName) => fieldErrors[fieldName]
 
