@@ -25,7 +25,7 @@ const defaultFormatErrorMessage = (error: ZodError) =>
 
 export const useForm = <TSchema extends ZodRawShape>(
   schema: ZodObject<TSchema>,
-  upstreamData: Partial<TSchema> = {},
+  upstreamData: Partial<z.infer<ZodObject<TSchema>>> = {},
   config: UseFormConfig<TSchema> = {}
 ) => {
   type TFieldName = keyof TSchema
