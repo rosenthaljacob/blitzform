@@ -71,6 +71,8 @@ export const useForm = <TSchema extends ZodRawShape>(
     )
   }
 
+  const resetTouched = () => setTouchedFields(initTouched)
+
   const isDiff = (fieldName: TFieldName) => {
     return diff[fieldName] !== undefined
   }
@@ -145,6 +147,7 @@ export const useForm = <TSchema extends ZodRawShape>(
     reset,
     handleSubmit,
     touchAll,
+    resetTouched,
     useField: <
       TName extends TFieldName,
       TChangeFn extends (
