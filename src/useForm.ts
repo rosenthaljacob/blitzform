@@ -1,263 +1,156 @@
-import { useEffect, useRef, useState, FormEvent, ChangeEvent } from 'react'
-import { z, ZodObject, ZodError, ZodRawShape, ZodIssue } from 'zod'
+import { useState } from 'react'
+import { z, ZodObject, ZodError, ZodRawShape } from 'zod'
+import useField, {
+  UseFieldCtx,
+  UseFieldOptions,
+  ShowValidationOn,
+  UntouchOn,
+} from './useField'
 
-export type Field<T> = {
-  value: T
-  disabled: boolean
-  touched: boolean
-  dirty: boolean
-  valid: boolean
-  errorMessage?: string
+type FormHandleSubmit<TSchema extends ZodRawShape> = (
+  onSubmit: (data: z.infer<ZodObject<TSchema>>) => void,
+  onError?: (error: ZodError) => void
+) => void
+
+type UseFormConfig<TSchema extends ZodRawShape> = {
+  formatErrorMessage?: (error: ZodError) => string
+  isEqual?: Partial<Record<keyof TSchema, (a: any, b: any) => boolean>>
+  initTouched?: Partial<Record<keyof TSchema, boolean>>
+  defaultShowValidationOn?: ShowValidationOn
+  defaultUntouchOn?: UntouchOn
 }
 
-type FieldReference = {
-  ref: {
-    current: {
-      value: any
-      dirty: boolean
-    }
+const defaultFormatErrorMessage = (error: ZodError) =>
+  error.errors[0]?.message ?? error.message
+
+export const useForm = <TSchema extends ZodRawShape>(
+  schema: ZodObject<TSchema>,
+  upstreamData: Partial<z.infer<ZodObject<TSchema>>> = {},
+  config: UseFormConfig<TSchema> = {}
+) => {
+  type TFieldName = keyof typeof schema.shape
+
+  const {
+    defaultShowValidationOn = 'touched',
+    defaultUntouchOn = 'focus',
+    formatErrorMessage = defaultFormatErrorMessage,
+  } = config
+
+  const initTouched = Object.keys(schema.shape).reduce(
+    (acc, key: TFieldName) => {
+      acc[key] = config.initTouched?.[key] ?? false
+      return acc
+    },
+    {} as Record<TFieldName, boolean>
+  )
+
+  const [diff, setDiff] = useState<Partial<z.infer<typeof schema>>>({})
+  const [touchedFields, setTouchedFields] =
+    useState<Record<TFieldName, boolean>>(initTouched)
+
+  const isTouched = (fieldName: TFieldName) => !!touchedFields[fieldName]
+  const setTouched = (fieldName: TFieldName, touched: boolean) => {
+    setTouchedFields((prev) => ({
+      ...prev,
+      [fieldName]: touched,
+    }))
   }
-  update: (data: Partial<Field<any>>) => void
-  reset: () => void
-}
 
-type FieldsMap = Record<string, FieldReference>
-
-function mapFieldsToData(fields: Record<string, any>): Record<string, any> {
-  const obj: Record<string, any> = {}
-  for (const name in fields) {
-    obj[name] = fields[name].ref.current.value
+  const touchAll = () => {
+    setTouchedFields(
+      Object.keys(schema.shape).reduce(
+        (acc, key: TFieldName) => {
+          acc[key] = true
+          return acc
+        },
+        {} as Record<TFieldName, boolean>
+      )
+    )
   }
 
-  return obj
-}
-
-function defaultFormatErrorMessage(error: ZodIssue) {
-  return error.message
-}
-
-// TODO: accept refined schemas, not possible due to https://github.com/colinhacks/zod/issues/2474
-export default function useForm<S extends ZodRawShape>(
-  schema: ZodObject<S>,
-  formatErrorMessage: (
-    error: ZodIssue,
-    name: string
-  ) => string = defaultFormatErrorMessage
-) {
-  const [fields, setFields] = useState<FieldsMap>({})
-
-  type Options<T> = {
-    value?: T
-    disabled?: boolean
-    touched?: boolean
-    showValidationOn?: 'submit' | 'blur' | 'change'
-    parseValue?: (e: any) => T
+  const isDiff = (fieldName: TFieldName) => {
+    return diff[fieldName] !== undefined
   }
 
-  function useField<T = string, C = ChangeEvent<HTMLInputElement>>(
-    name: keyof S,
-    {
-      value = '' as T,
-      disabled = false,
-      touched = false,
-      showValidationOn = 'submit',
-      parseValue = (e: ChangeEvent<HTMLInputElement>) => e.target.value as T,
-    }: Options<T> = {}
-  ) {
-    const shape = schema.shape[name]
-    const isOptional = shape.isOptional()
+  const getUpstreamValue = (fieldName: TFieldName) => upstreamData[fieldName]
 
-    function validate(value: T): undefined | string {
-      const res = shape.safeParse(value)
+  const getValue = (fieldName: TFieldName) =>
+    diff[fieldName] ?? getUpstreamValue(fieldName)
 
-      if (res.success) {
-        return
-      } else {
-        return formatErrorMessage(res.error.errors[0], name as string)
+  const dirtyFieldsArray = (Object.keys(schema.shape) as TFieldName[]).filter(
+    isDiff
+  )
+
+  const fieldErrors = (Object.keys(schema.shape) as TFieldName[]).reduce(
+    (acc, key) => {
+      const itemSchema = schema.shape[key]
+      const result = itemSchema.safeParse(getValue(key))
+      if (!result.success) {
+        acc[key] = result.error
       }
-    }
+      return acc
+    },
+    {} as Record<TFieldName, ZodError | undefined>
+  )
 
-    const message = validate(value)
+  const getError = (fieldName: TFieldName) => fieldErrors[fieldName]
 
-    const initialField = {
-      value,
-      disabled,
-      touched,
-      dirty: false,
-      valid: !message,
-      errorMessage: message,
-    }
+  const ctx: UseFieldCtx<typeof schema.shape> = {
+    schema,
+    isDirty: isDiff,
+    isTouched,
+    getValue,
+    getError,
+    getUpstreamValue,
+    setDiff,
+    setTouched,
+    formatErrorMessage,
+    defaultShowValidationOn,
+    defaultUntouchOn,
+  }
 
-    const ref = useRef<{
-      value: T
-      dirty: boolean
-    }>({
-      value,
-      dirty: false,
-    })
-    const [field, setField] = useState<Field<T>>(initialField)
-
-    function update(data: Partial<Field<T>>) {
-      if (typeof data.value !== 'undefined') {
-        const dirty = data.value !== initialField.value
-        const errorMessage = validate(data.value)
-
-        ref.current = {
-          value: data.value,
-          dirty,
-        }
-
-        setField((field: Field<T>) => ({
-          ...field,
-          touched: showValidationOn === 'change' ? dirty : field.touched,
-          dirty,
-          ...data,
-          errorMessage,
-          valid: !errorMessage,
-        }))
-      } else {
-        setField((field: Field<T>) => ({
-          ...field,
-          ...data,
-        }))
-      }
-    }
-
-    function reset() {
-      ref.current = {
-        value: initialField.value,
-        dirty: false,
-      }
-
-      setField(initialField)
-    }
-
-    useEffect(
-      () =>
-        setFields((fields: FieldsMap) => ({
-          ...fields,
-          [name]: {
-            ref,
-            update,
-            reset,
-          },
-        })),
-      []
+  const handleSubmit: FormHandleSubmit<typeof schema.shape> = (
+    onSubmit,
+    onError
+  ) => {
+    const fields = Object.keys(schema.shape).reduce(
+      (acc, key: TFieldName) => {
+        acc[key] = getValue(key)
+        return acc
+      },
+      {} as Record<TFieldName, any>
     )
 
-    function onChange(e: C) {
-      update({ value: parseValue(e) })
+    const result = schema.safeParse(fields)
+
+    if (result.success) {
+      onSubmit(result.data)
+      return
     }
 
-    const required = !isOptional
-    // Only show validation error when is touched
-    const valid = !field.touched ? true : !field.errorMessage
-    // Only show errrorMessage and validation styles if the field is touched according to the config
-    const errorMessage = field.touched ? field.errorMessage : undefined
-
-    const touch = () => update({ touched: false })
-    const untouch = () => update({ touched: false })
-
-    function getListeners() {
-      if (showValidationOn === 'blur') {
-        return {
-          onFocus: touch,
-          onBlur: untouch,
-        }
-      }
-
-      return {
-        onFocus: touch,
-      }
-    }
-
-    const inputProps = {
-      value: field.value,
-      disabled: field.disabled,
-      required,
-      name,
-      'data-valid': valid,
-      onChange,
-      ...getListeners(),
-    }
-
-    const props = {
-      name,
-      value: field.value,
-      disabled: field.disabled,
-      valid,
-      required,
-      errorMessage,
-      onChange,
-      ...getListeners(),
-    }
-
-    return {
-      ...field,
-      required,
-      valid,
-      name,
-      update,
-      reset,
-      errorMessage,
-      inputProps,
-      props,
-    }
+    onError?.(result.error)
   }
 
-  function touchFields() {
-    for (const name in fields) {
-      fields[name].update({ touched: true })
-    }
-  }
-
-  function reset() {
-    for (const name in fields) {
-      fields[name].reset()
-    }
-  }
-
-  function isDirty() {
-    for (const name in fields) {
-      if (fields[name].ref.current.dirty) {
-        return true
-      }
-    }
-
-    return false
-  }
-
-  function handleSubmit(
-    onSubmit: (data: z.infer<typeof schema>) => void,
-    onError?: (error: ZodError) => void
-  ) {
-    return (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
-
-      touchFields()
-
-      const data = mapFieldsToData(fields)
-      const parsed = schema.safeParse(data)
-
-      if (parsed.success) {
-        onSubmit(parsed.data)
-      } else {
-        if (onError) {
-          onError(parsed.error)
-        }
-      }
-    }
-  }
-
-  const formProps = {
-    noValidate: true,
+  const reset = () => {
+    setDiff({})
   }
 
   return {
-    useField,
-    handleSubmit,
-    formProps,
-    isDirty,
+    formProps: { noValidate: true as const },
+    formDirty: dirtyFieldsArray.length > 0,
     reset,
+    handleSubmit,
+    touchAll,
+    useField: <
+      TName extends TFieldName,
+      TChangeFn extends (
+        ...args: any[]
+      ) => z.infer<(typeof schema.shape)[TName]> = (
+        e: React.ChangeEvent<HTMLInputElement>
+      ) => z.infer<(typeof schema.shape)[TName]>,
+    >(
+      name: TName,
+      options?: UseFieldOptions<TChangeFn>
+    ) => useField(ctx, name, options),
   }
 }
