@@ -1,6 +1,6 @@
 # react-controlled-form
 
-A package for creating controlled forms in React with baked in [zod](https://zod.dev) validation.<br />
+A powerful React form management library with a focus on dynamic behavior, diff based change tracking and baked in [zod](https://zod.dev) validation, making it ideal for dynamic and complex forms.<br />
 You own and control the rendered markup and the hook takes care of the state and validation.
 
 <img alt="npm version" src="https://badge.fury.io/js/react-controlled-form.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/react-controlled-form.svg"> <a href="https://bundlephobia.com/result?p=react-controlled-form@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/react-controlled-form.svg"></a>
@@ -20,7 +20,7 @@ pnpm add react-controlled-form
 
 ```tsx
 import * as React from 'react'
-import { useForm, FieldProps } from 'react-controlled-form'
+import { useForm } from 'react-controlled-form'
 import { z, ZodError } from 'zod'
 
 // create our schema with validation included
@@ -37,7 +37,15 @@ type T_RegisterInput = z.infer<typeof Z_RegisterInput>
 
 function Form() {
   // we create a form by passing the schema
-  const { useField, handleSubmit, formProps, reset } = useForm(Z_RegisterInput)
+  const { useField, handleSubmit, formProps, reset, touchAll } = useForm(
+    Z_RegisterInput,
+    // pass an upstream/initial value, the hook will only store modified (dirty) values
+    {
+      name: '',
+      email: '',
+      password: '',
+    }
+  )
 
   // now we can create our fields for each property
   // the field controls the state and validation per property
@@ -53,11 +61,17 @@ function Form() {
   }
 
   function onFailure(error: ZodError) {
+    touchAll()
     console.error(error)
   }
 
   return (
-    <form {...formProps} onSubmit={handleSubmit(onSuccess, onFailure)}>
+    <form
+      {...formProps}
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleSubmit(onSuccess, onFailure)
+      }}>
       <label htmlFor="name">Full Name</label>
       <input id="name" {...name.inputProps} />
 
@@ -75,7 +89,195 @@ function Form() {
 }
 ```
 
-> **Note**: This is, of course, a simplified version and you most likely render custom components to handle labelling, error messages and validation styling.<br />For such cases, each field also exposes a `props` property that extends the `inputProps` with non-standard HTML attributes.
+> **Note**: This is a simple example. You can easily modify behaviors and integrate custom components.
+
+## Advanced Example
+
+This section demonstrates a more sophisticated form setup using `react-controlled-form`.
+
+- Dynamic form behavior is controlled through `formDirty` and `formValid`, ensuring the submit button only enables when the form has changes and passes validation.
+- By using RcfFormProvider, we decouple state management from form components. This allows you to create a library of self-managed components.
+- We create reusable `RcfTextField` and `RcfSelect` components that can be dropped into any form using the library.
+
+```tsx
+import React from 'react'
+import {
+  Container,
+  TextField,
+  Button,
+  MenuItem,
+  FormControl,
+  FormHelperText,
+  Select,
+  InputLabel,
+  Stack,
+} from '@mui/material'
+import { useForm, useRcfField, RcfFormProvider } from 'react-controlled-form'
+import { z } from 'zod'
+
+const userFormSchema = z.object({
+  firstName: z.string().min(1, { message: 'First name is required' }),
+  lastName: z.string().min(1, { message: 'Last name is required' }),
+  email: z.string().email({ message: 'Invalid email address' }),
+  permissions: z
+    .array(z.string())
+    .min(1, { message: 'Please select at least one permission' }),
+})
+
+export type UserType = z.infer<typeof userFormSchema>
+
+const permissionsOptions = ['Read', 'Write', 'Delete', 'Admin']
+
+export default function EditUser({
+  data,
+  setData,
+}: {
+  data: UserType
+  setData: (data: UserType) => void
+}) {
+  const {
+    ctx,
+    handleSubmit,
+    touchAll,
+    formProps,
+    reset,
+    formDirty,
+    formValid,
+  } = useForm(
+    userFormSchema,
+    // pass the upstream/initial value, the hook will only store modified (dirty) values
+    data,
+    {
+      defaultUntouchOn: 'focus', // focus fields on change
+      initTouched: true, // mark all fields as touched initially
+    }
+  )
+
+  function handleSubmitSuccess(data: UserType) {
+    setData(data) // update upstream data
+    reset() // this will clear the useForm diff and the form will show the upstream data
+  }
+
+  function handleSubmitError(error: z.ZodError) {
+    touchAll() // mark all fields as touched to display validation errors
+    console.log('Error:', error)
+  }
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    handleSubmit(handleSubmitSuccess, handleSubmitError)
+  }
+
+  return (
+    <Container maxWidth="sm">
+      <h2>Edit User</h2>
+      {/* RcfFormProvider passes the form context to child components */}
+      <RcfFormProvider ctx={ctx}>
+        <form {...formProps} onSubmit={onSubmit}>
+          <Stack spacing={2.5}>
+            <RcfTextField name="firstName" label="First Name" />
+
+            <RcfTextField name="lastName" label="Last Name" />
+
+            <RcfTextField name="email" label="Email" type="email" />
+
+            <RcfSelect name="permissions" label="Permissions" multiple>
+              {permissionsOptions.map((permission) => (
+                <MenuItem key={permission} value={permission}>
+                  {permission}
+                </MenuItem>
+              ))}
+            </RcfSelect>
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={!formDirty || !formValid} // button disabled if the form is not modified or invalid
+            >
+              Save
+            </Button>
+          </Stack>
+        </form>
+      </RcfFormProvider>
+    </Container>
+  )
+}
+
+// reusable input field for use inside the RcfFormProvider
+function RcfTextField({
+  name,
+  label,
+  type = 'text',
+}: {
+  name: string
+  label: string
+  type?: string
+}) {
+  // connect the input to the form state
+  const field = useRcfField(name)
+
+  return (
+    <FormControl fullWidth>
+      <TextField
+        {...field.inputProps}
+        type={type}
+        label={label}
+        error={!!field.errorMessage}
+        helperText={field.errorMessage}
+      />
+    </FormControl>
+  )
+}
+
+// Reusable Select component integrated with react-controlled-form
+function RcfSelect({
+  name,
+  label,
+  multiple,
+  children,
+}: {
+  name: string
+  label: string
+  multiple?: boolean
+  children: React.ReactNode
+}) {
+  const field = useRcfField(name, {
+    // custom parseValue function since default is (e) => e.target.value
+    parseValue: (v) => v,
+    // custom isEqual function to compare new value to upstream value
+    isEqual: (a, b) => {
+      if (Array.isArray(a) && Array.isArray(b)) {
+        return [...a].sort().join(',') === [...b].sort().join(',')
+      }
+      return a === b
+    },
+  })
+
+  const labelId = `rcf-select-${name}`
+
+  return (
+    <FormControl fullWidth error={!!field.errorMessage}>
+      <InputLabel id={labelId}>{label}</InputLabel>
+      <Select
+        {...field.inputProps}
+        labelId={labelId}
+        label={label}
+        multiple={multiple}
+        value={field.inputProps.value}
+        onChange={(e) => {
+          const value = e.target.value as string | string[]
+          field.inputProps.onChange(value)
+        }}>
+        {children}
+      </Select>
+      {field.errorMessage && (
+        <FormHelperText>{field.errorMessage}</FormHelperText>
+      )}
+    </FormControl>
+  )
+}
+```
 
 ## API Reference
 
@@ -83,10 +285,11 @@ function Form() {
 
 The core API that connects the form with a zod schema and returns a set of helpers to manage the state and render the actual markup.
 
-| Parameter          |  Type                                        | Default                    |  Description                                       |
-| ------------------ | -------------------------------------------- | -------------------------- | -------------------------------------------------- |
-| schema             | ZodObject                                    |                            | A valid zod object schema                          |
-| formatErrorMessage |  `(error: ZodIssue, name: string) => string` | `(error) => error.message` | A custom formatter that receives the raw zod issue |
+| Parameter    | Type                                | Default               | Description                                                   |
+| ------------ | ----------------------------------- | --------------------- | ------------------------------------------------------------- |
+| schema       | ZodObject                           |                       | A valid zod object schema                                     |
+| upstreamData | Partial<z.infer<ZodObject<schema>>> |                       | The upstream value, useForm only stores diffs from this value |
+| config       | [Config](#config)                   | See [Config](#config) | Additional config options                                     |
 
 ```ts
 import { z } from 'zod'
@@ -103,8 +306,18 @@ const Z_Input = z.object({
 type T_Input = z.infer<typeof Z_Input>
 
 // usage inside react components
-const { useField, handleSubmit, reset, formProps } = useForm(Z_Input)
+const const { useField, handleSubmit, formProps, reset, touchAll } = useForm(Z_Input, {})
 ```
+
+#### Config
+
+| Parameter               | Type                                                   | Default                    | Description                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| formatErrorMessage      | `(error: ZodIssue, name: string) => string`            | `(error) => error.message` | Customizes error messages. This formatter processes the raw zod issue to create a more localized or user friendly message.                                                                                                          |
+| isEqual                 | `<Record<keyof TSchema, (a: any, b: any) => boolean>>` | `{}`                       | Allows deep equality checks for specific fields. Useful when working with arrays, objects, or custom data structures where the default `===` comparison may not be sufficient. Example: Compare sorted arrays for equality.         |
+| initTouched             | `boolean` \| `Record<keyof TSchema, boolean>`          | `false`                    | Specifies the initial touched state of fields. Set to `true` to touch all fields by default, or provide an object to touch specific fields. This is beneficial for pre-filled forms where validation should be immediately visible. |
+| defaultShowValidationOn | `touched` \| `always`                                  | `touched`                  | Determines when to display validation errors. Choose between showing errors when a field is touched or always showing them.                                                                                                         |
+| defaultUntouchOn        | `focus` \| `change` \| `never`                         | `focus`                    | Controls when a field should be marked as untouched, allowing you to reset validation states on focus, change, or never.                                                                                                            |
 
 #### formatErrorMessage
 
@@ -125,28 +338,55 @@ function formatErrorMessage(error: ZodIssue, name: string) {
 }
 ```
 
+#### isEqual
+
+An object where deep equal checks can be defined for specific fields. This can be used when the default `(a, b) => a === b` check is not sufficient, such as when handling arrays or objects.
+
+```ts
+const { handleSubmit, touchAll, formProps, reset, formDirty, formValid } =
+  useForm(
+    schema,
+    {},
+    {
+      isEqual: {
+        permissions: (a, b) =>
+          [...a].sort().join(',') === [...b].sort().join(','),
+      },
+    }
+  )
+```
+
 ### useField
 
-A hook that manages the field state and returns the relevant HTML attributes to render our inputs.<br />
-Also returns a set of helpers to manually update and reset the field.
+The `useField` hook manages the state, validation, and interaction of individual form fields. It returns a set of HTML attributes and properties to connect the field to form elements while handling error management, touch state, and dynamic behavior.
 
-| Parameter |  Type                          | Default               |  Description                                                |
+| Parameter | Type                           | Default               | Description                                                 |
 | --------- | ------------------------------ | --------------------- | ----------------------------------------------------------- |
 | name      | `keyof z.infer<typeof schema>` |                       | The name of the schema property that this field connects to |
 | config    | [Config](#config)              | See [Config](#config) | Initial field data and additional config options            |
 
 #### Config
 
-| Property         | Type                                 | Default                 |  Description                                                                                                                |
-| ---------------- | ------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| value            | `any`                                | `''`                    | Initial value                                                                                                               |
-| disabled         | `boolean`                            | `false`                 | Initial disabled state                                                                                                      |
-| touched          | `boolean`                            | `false`                 | Initial touched state that indicates whether validation errors are shown or not                                             |
-| showValidationOn | `"change"` \| `"blur"` \| `"submit"` | `"submit"`              | Which event is used to trigger the touched state                                                                            |
-| parseValue       | `(Event) => any`                     | `(e) => e.target.value` | How the value is received from the input element.<br />Use `e.target.checked` when working with `<input type="checkbox" />` |
+| Property         | Type                                  | Default                 | Description                                                                                                                                                 |
+| ---------------- | ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| disabled         | `boolean`                             | `false`                 | Disables the field when true.                                                                                                                               |
+| disabledIf       | `(formState: TSchema) => boolean`     | `undefined`             | Dynamically disables the field based on the current form state.                                                                                             |
+| showValidationOn | `"touched"` \| `"always"`             | `"touched"`             | Specifies when validation errors are displayed—either after the field is touched or continuously.                                                           |
+| unTouchOn        | `"focus"` \| `"change"` \| `"never"`  | `"focus"`               | Configures when the field should be marked as untouched. This option can reset validation states based on focus, change, or be disabled entirely (`never`). |
+| parseValue       | `(Event) => any`                      | `(e) => e.target.value` | Parses the value from the event before storing it in the field state. Useful for custom inputs like checkboxes or non-string values.                        |
+| isEqual          | `(a: unknown, b: unknown) => boolean` | `(a, b) => a === b`     | Provides a custom comparison function to determine whether the field value has changed from its upstream value, crucial for complex data structures.        |
+
+#### disabledIf
+
+The `disabledIf` option allows you to dynamically disable a field based on the current form state. This is particularly useful for conditional fields that depend on other form values.
 
 ```ts
-const { inputProps, props, errorMessage, update, reset } = useField('email')
+const { inputProps, errorMessage, dirty, valid, touched, disabled } = useField(
+  'email',
+  {
+    disabledIf: (formState) => formState.role === 'admin',
+  }
+)
 ```
 
 #### inputProps
@@ -155,68 +395,27 @@ Pass these to native HTML `input`, `select` and `textarea` elements.<br />
 Use `data-valid` to style the element based on the validation state.
 
 ```ts
-type InputProps = {
-  name: string
+export type FieldInputProps<TChangeFn> = {
   value: any
   disabled: boolean
-  'data-valid': boolean
-  onChange: React.ChangeEventHandler<HTMLElement>
-  onBlur?: React.KeyboardEventHandler<HTMLElement>
-}
-```
-
-#### props
-
-Pass these to custom components that render label and input elements.<br />
-Also includes information such as `errorMessage` or `valid` that's non standard HTML attributes and thus can't be passed to native HTML `input` elements directly.
-
-```ts
-type Props = {
-  value: any
-  name: string
-  valid: boolean
   required: boolean
-  disabled: boolean
-  errorMessage?: string
-  onChange: React.ChangeEventHandler<HTMLElement>
-  onBlur?: React.KeyboardEventHandler<HTMLElement>
+  name: string
+  'data-valid': boolean
+  onChange: TChangeFn // Default: (e: ChangeEvent<HTMLElement>) => string unless specified otherwise
+  onBlur: () => void
+  onFocus: () => void
 }
 ```
 
 #### errorMessage
 
-> **Note**: If you're using [`props`](#props), you already get the errorMessage!
-
-A string containing the validation message. Only returned if the field is invalid **and** touched.
-
-#### update
-
-Programmatically change the data of a field. Useful e.g. when receiving data from an API.<br />
-If value is changed, it will automatically trigger re-validation.
-
-> **Note**: If you know the initial data upfront, prefer to pass it to the `useField` hook directly though.
-
-```ts
-update({
-  value: 'Foo',
-  touched: true,
-})
-```
-
-#### reset
-
-Resets the field back to its initial field data.
-
-```ts
-reset()
-```
+A string containing the validation message. Returns undefined according to if the field is valid, touched and the `showValidationOn` setting.
 
 ### handleSubmit
 
-Helper that wraps the native `onSubmit` event on `<form>` elements.<br />
-It prevents default action execution and parses the form data using the zod schema.
+It form data using the zod schema. You will likely want to prevent the default form behavior by calling `e.preventDefault()`.
 
-| Parameter |  Type                            |  Description                                       |
+| Parameter | Type                             | Description                                        |
 | --------- | -------------------------------- | -------------------------------------------------- |
 | onSuccess | `(data: z.infer<typeof schema>)` | Callback on successful safe parse of the form data |
 | onFailure | `(error: ZodError)`              | Callback on failed safe parse                      |
@@ -224,7 +423,7 @@ It prevents default action execution and parses the form data using the zod sche
 ```ts
 import { ZodError } from 'zod'
 
-function onSuccess(data: T_Input) {
+function onSuccess(data: TInput) {
   console.log(data)
 }
 
@@ -233,27 +432,16 @@ function onFailure(error: ZodError) {
 }
 
 // <form> onSubmit handler
-const onSubmit = handleSubmit(onSuccess, onFailure)
-```
-
-### reset
-
-Resets the form fields back to their initial field data. Helpful when trying to clear a form after a successful submit.
-
-> **Note**: This API is similar to the `reset` helper that the `useField` hook returns. The only difference is that it resets all fields.
-
-```
-reset()
+const onSubmit = (e) => {
+  e.preventDefault()
+  handleSubmit(onSuccess, onFailure)
+}
 ```
 
 ### isDirty
 
 Returns whether the form is dirty, meaning that any of the fields was altered compared to their initial state.<br />
 Useful e.g. when conditionally showing a save button or when you want to inform a user that he's closing a modal with unsafed changes.
-
-```ts
-isDirty()
-```
 
 ### formProps
 
@@ -266,35 +454,56 @@ const formProps = {
 }
 ```
 
-## Recipes
+## RcfFormProvider
 
-### Non-String Values
+The `RcfFormProvider` component allows you to decouple the form state management from the parent component. This context can be used by the `useRcfField` hook to connect to the form state.
 
-By default, [useField](#usefield) expects string values and defaults to an empty string if no initial value is provided.<br />
-In order to also support e.g. `boolean` values or arrays, we can customise the types and pass new values.
+The component takes a single prop `ctx` which carries the form context.
 
 ```tsx
-import { ChangeEvent } from 'react'
+function Form() {
+  const { ctx } = useForm(schema, {})
 
-const acceptsTerms = useField<boolean, ChangeEvent<HTMLInputElement>>('terms', {
-  // alter how the value is obtained if neccessary
-  // e.g. for checkboxes or custom inputs
-  parseValue: (e) => e.target.checked,
-  // set an initial value overwritting the default empty string
-  value: false,
-})
-
-// custom multi-select input that returns an array of values on change
-type Tags = Array<string>
-type TagsChangeEvent = (value: Tags) => void
-
-const tags = useField<Tags, TagsChangeEvent>('tags', {
-  parseValue: (value) => value,
-  value: [],
-})
+  return (
+    <RcfFormProvider ctx={ctx}>
+      <RcfTextField name="firstName" label="First Name" />
+    </RcfFormProvider>
+  )
+}
 ```
 
-Passing a custom value type and change event will also change the type of `field.value` and the expected input for [update](#update).
+### useRcfField
+
+Can be used only inside a `RcfFormProvider` component. It is similar to `useField` although does not share the same schema types.
+
+```tsx
+import { TextField, FormControl } from '@mui/material'
+import { useRcfField } from 'react-controlled-form'
+
+function RcfTextField({
+  name,
+  label,
+  type = 'text',
+}: {
+  name: string
+  label: string
+  type?: string
+}) {
+  const field = useRcfField(name)
+
+  return (
+    <FormControl fullWidth>
+      <TextField
+        {...field.inputProps}
+        type={type}
+        label={label}
+        error={!!field.errorMessage}
+        helperText={field.errorMessage}
+      />
+    </FormControl>
+  )
+}
+```
 
 ## License
 
