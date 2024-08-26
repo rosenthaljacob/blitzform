@@ -7,12 +7,12 @@ import useField, {
   UntouchOn,
 } from './useField'
 
-type FormHandleSubmit<TSchema extends ZodRawShape> = (
+export type FormHandleSubmit<TSchema extends ZodRawShape> = (
   onSubmit: (data: z.infer<ZodObject<TSchema>>) => void,
   onError?: (error: ZodError) => void
 ) => void
 
-type UseFormConfig<TSchema extends ZodRawShape> = {
+export type UseFormConfig<TSchema extends ZodRawShape> = {
   formatErrorMessage?: (error: ZodError) => string
   isEqual?: Partial<Record<keyof TSchema, (a: any, b: any) => boolean>>
   initTouched?: Partial<Record<keyof TSchema, boolean>> | boolean
@@ -139,6 +139,7 @@ export const useForm = <TSchema extends ZodRawShape>(
   }
 
   return {
+    ctx,
     formProps: { noValidate: true as const },
     formDirty: dirtyFieldsArray.length > 0,
     reset,

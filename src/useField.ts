@@ -4,7 +4,7 @@ import { ZodRawShape, ZodError, ZodObject, z } from 'zod'
 export type ShowValidationOn = 'touched' | 'always'
 export type UntouchOn = 'focus' | 'change' | 'never'
 
-type FieldInputProps<TChangeFn> = {
+export type FieldInputProps<TChangeFn> = {
   value: any
   disabled: boolean
   required: boolean
@@ -25,7 +25,10 @@ export type FieldProps<T, TChangeFn> = {
   inputProps: FieldInputProps<TChangeFn>
 }
 
-export type UseFieldOptions<TChangeFn> = {
+type ChangeFn = (...args: any[]) => any
+type DefaultChangeFn = (e: ChangeEvent<HTMLElement>) => string
+
+export type UseFieldOptions<TChangeFn extends ChangeFn = DefaultChangeFn> = {
   disabled?: boolean
   showValidationOn?: ShowValidationOn
   unTouchOn?: UntouchOn
@@ -49,20 +52,20 @@ export type UseFieldCtx<TSchema extends ZodRawShape> = {
   defaultUntouchOn: UntouchOn
 }
 
-const defaultIsEqual = (a: unknown, b: unknown) => a === b
-
-export type UseField = <
+type UseField = <
   TSchema extends ZodRawShape,
   TKey extends keyof TSchema,
   TValue extends z.infer<TSchema[TKey]>,
   TChangeFn extends (...args: any[]) => TValue = (
-    e: ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLElement>
   ) => TValue,
 >(
   ctx: UseFieldCtx<TSchema>,
   name: TKey,
   options?: UseFieldOptions<TChangeFn>
 ) => FieldProps<TValue, TChangeFn>
+
+const defaultIsEqual = (a: unknown, b: unknown) => a === b
 
 const useField: UseField = (ctx, name, options = {}) => {
   const {
