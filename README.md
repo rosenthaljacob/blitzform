@@ -477,6 +477,9 @@ function Form() {
 Can be used only inside a `RcfFormProvider` component. It is similar to `useField` although does not share the same schema types.
 
 ```tsx
+import { TextField, FormControl } from '@mui/material'
+import { useRcfField } from 'react-controlled-form'
+
 function RcfTextField({
   name,
   label,
