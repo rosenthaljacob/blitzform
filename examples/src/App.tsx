@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import './App.css'
 import EditUser, { UserType } from './edit-user'
 import EditUserCode from './edit-user-code'
 
