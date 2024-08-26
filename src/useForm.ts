@@ -15,7 +15,7 @@ type FormHandleSubmit<TSchema extends ZodRawShape> = (
 type UseFormConfig<TSchema extends ZodRawShape> = {
   formatErrorMessage?: (error: ZodError) => string
   isEqual?: Partial<Record<keyof TSchema, (a: any, b: any) => boolean>>
-  initTouched?: Partial<Record<keyof TSchema, boolean>>
+  initTouched?: Partial<Record<keyof TSchema, boolean>> | boolean
   defaultShowValidationOn?: ShowValidationOn
   defaultUntouchOn?: UntouchOn
 }
@@ -38,7 +38,10 @@ export const useForm = <TSchema extends ZodRawShape>(
 
   const initTouched = Object.keys(schema.shape).reduce(
     (acc, key: TFieldName) => {
-      acc[key] = config.initTouched?.[key] ?? false
+      acc[key] =
+        typeof config.initTouched === 'boolean'
+          ? config.initTouched
+          : (config.initTouched?.[key] ?? false)
       return acc
     },
     {} as Record<TFieldName, boolean>
