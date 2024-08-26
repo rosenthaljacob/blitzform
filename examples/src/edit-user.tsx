@@ -10,7 +10,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useRcfField, RcfFormProvider } from '../../src'
+import { useForm, useRcfField, RcfFormProvider } from 'react-controlled-form'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
