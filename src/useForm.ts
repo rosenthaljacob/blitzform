@@ -13,7 +13,7 @@ export type FormHandleSubmit<TSchema extends ZodRawShape> = (
 ) => void
 
 export type UseFormConfig<TSchema extends ZodRawShape> = {
-  formatErrorMessage?: (error: ZodError) => string
+  formatErrorMessage?: (error: ZodError, name: keyof TSchema) => string
   isEqual?: Partial<Record<keyof TSchema, (a: any, b: any) => boolean>>
   initTouched?: Partial<Record<keyof TSchema, boolean>> | boolean
   defaultShowValidationOn?: ShowValidationOn
@@ -137,11 +137,13 @@ export const useForm = <TSchema extends ZodRawShape>(
   }
 
   const formDirty = fieldKeys.filter(isDiff).length > 0
+  const formValid = fieldKeys.every((key) => !fieldErrors[key])
 
   return {
     ctx,
     formProps: { noValidate: true as const },
     formDirty,
+    formValid,
     reset,
     handleSubmit,
     touchAll,

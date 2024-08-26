@@ -29,7 +29,7 @@ type ChangeFn = (...args: any[]) => any
 type DefaultChangeFn = (e: ChangeEvent<HTMLElement>) => string
 
 export type UseFieldOptions<
-  TChangeFn extends ChangeFn = DefaultChangeFn,
+  TChangeFn extends ChangeFn = ChangeFn | DefaultChangeFn,
   TSchema extends ZodRawShape = ZodRawShape,
 > = {
   disabled?: boolean
@@ -52,7 +52,7 @@ export type UseFieldCtx<TSchema extends ZodRawShape> = {
   setDiff: React.Dispatch<
     React.SetStateAction<Partial<z.infer<ZodObject<TSchema>>>>
   >
-  formatErrorMessage: (error: ZodError) => string
+  formatErrorMessage: (error: ZodError, key: keyof TSchema) => string
   defaultShowValidationOn: ShowValidationOn
   defaultUntouchOn: UntouchOn
 }
@@ -131,7 +131,7 @@ const useField: UseField = (ctx, name, options = {}) => {
   const errorMessage = (() => {
     if (!error) return undefined
     if (showValidationOn === 'touched' && !touched) return undefined
-    return formatErrorMessage(error!)
+    return formatErrorMessage(error!, name)
   })()
 
   const inputProps: FieldInputProps<typeof onChange> = {
