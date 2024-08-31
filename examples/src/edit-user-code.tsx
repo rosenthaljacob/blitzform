@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from '@mui/material'
+import { Container, Box } from '@mui/material'
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs' // or any other theme
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript'
@@ -190,9 +190,7 @@ function RcfSelect({
 export default function EditUserCode() {
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Code
-      </Typography>
+      <h2>Code</h2>
       <Box my={2}>
         <SyntaxHighlighter
           customStyle={{
