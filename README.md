@@ -1,7 +1,7 @@
 # react-controlled-form
 
-A powerful React form management library with a focus on dynamic behavior, diff based change tracking and baked in [zod](https://zod.dev) validation, making it ideal for dynamic and complex forms.<br />
-You own and control the rendered markup and the hook takes care of the state and validation.
+A powerful and extensible React form management framework with a focus on dynamic behavior. Diff based change tracking and baked in [zod](https://zod.dev) validation makes it ideal for dynamic and complex forms.<br />
+You own and control the rendered markup and the hook takes care of the behavior, state and validation.
 
 <img alt="npm version" src="https://badge.fury.io/js/react-controlled-form.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/react-controlled-form.svg"> <a href="https://bundlephobia.com/result?p=react-controlled-form@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/react-controlled-form.svg"></a>
 
