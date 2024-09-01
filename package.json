@@ -1,7 +1,7 @@
 {
-  "name": "react-controlled-form",
+  "name": "blitzform",
   "description": "A lightweight yet powerful framework for building dynamic forms in React",
-  "version": "0.0.1-alpha.0",
+  "version": "0.0.1-alpha.1",
   "main": "lib/index.js",
   "module": "es/index.js",
   "typings": "types/index.d.ts",
