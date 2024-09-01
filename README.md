@@ -1,7 +1,8 @@
-# blitzform
+# Blitzform
 
-A powerful and extensible React form management framework with a focus on dynamic behavior. Diff based change tracking and baked in [zod](https://zod.dev) validation makes it ideal for dynamic and complex forms.<br />
-You own and control the rendered markup and the hook takes care of the behavior, state and validation.
+A powerful and extensible React form management framework focused on dynamic behavior. With diff-based change tracking and baked in [zod](https://zod.dev) validation. Blitzform handles form state, behavior, and validation, while you retain full control over the markup.
+<br />
+Implement features like displaying the "Save" button only when the form is modified and valid, or showing error messages contextually based on user interaction. [See live](https://rosenthaljacob.github.io/blitzform/)
 
 <img alt="npm version" src="https://badge.fury.io/js/blitzform.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/blitzform.svg"> <a href="https://bundlephobia.com/result?p=blitzform@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/blitzform.svg"></a>
 
@@ -56,7 +57,7 @@ function Form() {
   function onSuccess(data: T_RegisterInput) {
     // do something with the safely parsed data
     console.log(data)
-    // reset the form to its initial state
+    // reset the form to the upstream/initial state
     reset()
   }
 
@@ -93,11 +94,14 @@ function Form() {
 
 ## Advanced Example
 
+[See live](https://rosenthaljacob.github.io/blitzform/)
+
 This section demonstrates a more sophisticated form setup using `blitzform`.
 
 - Dynamic form behavior is controlled through `formDirty` and `formValid`, ensuring the submit button only enables when the form has changes and passes validation.
-- By using RcfFormProvider, we decouple state management from form components. This allows you to create a library of self-managed components.
-- We create reusable `RcfTextField` and `RcfSelect` components that can be dropped into any form using the library.
+- Show error messages only after inputs lose focus, and hide them when focused again.
+- By using BlitzformProvider, we decouple state management from form components. This allows you to create a library of self-managed components.
+- We create reusable `BlitzTextField` and `BlitzSelect` components that can be dropped into any form using the library.
 
 ```tsx
 import React from 'react'
@@ -112,7 +116,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useRcfField, RcfFormProvider } from 'blitzform'
+import { useForm, useBlitzField, BlitzformProvider } from 'blitzform'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
@@ -148,7 +152,7 @@ export default function EditUser({
     // pass the upstream/initial value, the hook will only store modified (dirty) values
     data,
     {
-      defaultUntouchOn: 'focus', // focus fields on change
+      defaultUntouchOn: 'focus', // untouch fields on focus
       initTouched: true, // mark all fields as touched initially
     }
   )
@@ -171,23 +175,23 @@ export default function EditUser({
   return (
     <Container maxWidth="sm">
       <h2>Edit User</h2>
-      {/* RcfFormProvider passes the form context to child components */}
-      <RcfFormProvider ctx={ctx}>
+      {/* BlitzformProvider passes the form context to child components */}
+      <BlitzformProvider ctx={ctx}>
         <form {...formProps} onSubmit={onSubmit}>
           <Stack spacing={2.5}>
-            <RcfTextField name="firstName" label="First Name" />
+            <BlitzTextField name="firstName" label="First Name" />
 
-            <RcfTextField name="lastName" label="Last Name" />
+            <BlitzTextField name="lastName" label="Last Name" />
 
-            <RcfTextField name="email" label="Email" type="email" />
+            <BlitzTextField name="email" label="Email" type="email" />
 
-            <RcfSelect name="permissions" label="Permissions" multiple>
+            <BlitzSelect name="permissions" label="Permissions" multiple>
               {permissionsOptions.map((permission) => (
                 <MenuItem key={permission} value={permission}>
                   {permission}
                 </MenuItem>
               ))}
-            </RcfSelect>
+            </BlitzSelect>
 
             <Button
               type="submit"
@@ -199,13 +203,13 @@ export default function EditUser({
             </Button>
           </Stack>
         </form>
-      </RcfFormProvider>
+      </BlitzformProvider>
     </Container>
   )
 }
 
-// reusable input field for use inside the RcfFormProvider
-function RcfTextField({
+// reusable input field for use inside the BlitzformProvider
+function BlitzTextField({
   name,
   label,
   type = 'text',
@@ -215,7 +219,7 @@ function RcfTextField({
   type?: string
 }) {
   // connect the input to the form state
-  const field = useRcfField(name)
+  const field = useBlitzField(name)
 
   return (
     <FormControl fullWidth>
@@ -230,8 +234,8 @@ function RcfTextField({
   )
 }
 
-// Reusable Select component integrated with blitzform
-function RcfSelect({
+// Reusable Select component integrated with Blitzform
+function BlitzSelect({
   name,
   label,
   multiple,
@@ -242,7 +246,7 @@ function RcfSelect({
   multiple?: boolean
   children: React.ReactNode
 }) {
-  const field = useRcfField(name, {
+  const field = useBlitzField(name, {
     // custom parseValue function since default is (e) => e.target.value
     parseValue: (v) => v,
     // custom isEqual function to compare new value to upstream value
@@ -254,7 +258,7 @@ function RcfSelect({
     },
   })
 
-  const labelId = `rcf-select-${name}`
+  const labelId = `blitz-select-${name}`
 
   return (
     <FormControl fullWidth error={!!field.errorMessage}>
@@ -311,13 +315,13 @@ const const { useField, handleSubmit, formProps, reset, touchAll } = useForm(Z_I
 
 #### Config
 
-| Parameter               | Type                                                   | Default                    | Description                                                                                                                                                                                                                         |
-| ----------------------- | ------------------------------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| formatErrorMessage      | `(error: ZodIssue, name: string) => string`            | `(error) => error.message` | Customizes error messages. This formatter processes the raw zod issue to create a more localized or user friendly message.                                                                                                          |
-| isEqual                 | `<Record<keyof TSchema, (a: any, b: any) => boolean>>` | `{}`                       | Allows deep equality checks for specific fields. Useful when working with arrays, objects, or custom data structures where the default `===` comparison may not be sufficient. Example: Compare sorted arrays for equality.         |
-| initTouched             | `boolean` \| `Record<keyof TSchema, boolean>`          | `false`                    | Specifies the initial touched state of fields. Set to `true` to touch all fields by default, or provide an object to touch specific fields. This is beneficial for pre-filled forms where validation should be immediately visible. |
-| defaultShowValidationOn | `touched` \| `always`                                  | `touched`                  | Determines when to display validation errors. Choose between showing errors when a field is touched or always showing them.                                                                                                         |
-| defaultUntouchOn        | `focus` \| `change` \| `never`                         | `focus`                    | Controls when a field should be marked as untouched, allowing you to reset validation states on focus, change, or never.                                                                                                            |
+| Parameter               | Type                                                   | Default                                                  | Description                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| formatErrorMessage      | `(error: ZodIssue, name: string) => string`            | `(error) => error.errors?.[0]?.message ?? error.message` | Customizes error messages. This formatter processes the raw zod issue to create a more localized or user friendly message.                                                                                                          |
+| isEqual                 | `<Record<keyof TSchema, (a: any, b: any) => boolean>>` | `{}`                                                     | Allows deep equality checks for specific fields. Useful when working with arrays, objects, or custom data structures where the default `===` comparison may not be sufficient. Example: Compare sorted arrays for equality.         |
+| initTouched             | `boolean` \| `Record<keyof TSchema, boolean>`          | `false`                                                  | Specifies the initial touched state of fields. Set to `true` to touch all fields by default, or provide an object to touch specific fields. This is beneficial for pre-filled forms where validation should be immediately visible. |
+| defaultShowValidationOn | `touched` \| `always`                                  | `touched`                                                | Determines when to display validation errors. Choose between showing errors when a field is touched or always showing them.                                                                                                         |
+| defaultUntouchOn        | `focus` \| `change` \| `never`                         | `focus`                                                  | Controls when a field should be marked as untouched, allowing you to reset validation states on focus, change, or never.                                                                                                            |
 
 #### formatErrorMessage
 
@@ -413,7 +417,7 @@ A string containing the validation message. Returns undefined according to if th
 
 ### handleSubmit
 
-It form data using the zod schema. You will likely want to prevent the default form behavior by calling `e.preventDefault()`.
+It validates form data using the zod schema. You will likely want to prevent the default form behavior by calling `e.preventDefault()` as shown below.
 
 | Parameter | Type                             | Description                                        |
 | --------- | -------------------------------- | -------------------------------------------------- |
@@ -441,7 +445,7 @@ const onSubmit = (e) => {
 ### isDirty
 
 Returns whether the form is dirty, meaning that any of the fields was altered compared to their initial state.<br />
-Useful e.g. when conditionally showing a save button or when you want to inform a user that he's closing a modal with unsafed changes.
+Useful e.g. when conditionally showing a save button or when you want to inform a user that they're closing a modal with unsaved changes.
 
 ### formProps
 
@@ -454,9 +458,9 @@ const formProps = {
 }
 ```
 
-## RcfFormProvider
+## BlitzformProvider
 
-The `RcfFormProvider` component allows you to decouple the form state management from the parent component. This context can be used by the `useRcfField` hook to connect to the form state.
+The `BlitzformProvider` component allows you to decouple the form state management from the parent component. This context can be used by the `useBlitzField` hook to connect to the form state.
 
 The component takes a single prop `ctx` which carries the form context.
 
@@ -465,22 +469,22 @@ function Form() {
   const { ctx } = useForm(schema, {})
 
   return (
-    <RcfFormProvider ctx={ctx}>
-      <RcfTextField name="firstName" label="First Name" />
-    </RcfFormProvider>
+    <BlitzformProvider ctx={ctx}>
+      <BlitzTextField name="firstName" label="First Name" />
+    </BlitzformProvider>
   )
 }
 ```
 
-### useRcfField
+### useBlitzField
 
-Can be used only inside a `RcfFormProvider` component. It is similar to `useField` although does not share the same schema types.
+Can be used only inside a `BlitzformProvider` component. It is similar to `useField` although does not share the schema types.
 
 ```tsx
 import { TextField, FormControl } from '@mui/material'
-import { useRcfField } from 'blitzform'
+import { useBlitzField } from 'blitzform'
 
-function RcfTextField({
+function BlitzTextField({
   name,
   label,
   type = 'text',
@@ -489,7 +493,7 @@ function RcfTextField({
   label: string
   type?: string
 }) {
-  const field = useRcfField(name)
+  const field = useBlitzField(name)
 
   return (
     <FormControl fullWidth>
@@ -509,9 +513,9 @@ function RcfTextField({
 
 This package was forked from [react-controlled-form](https://github.com/robinweser/react-controlled-form) by [@robinweser](http://weser.io).
 <br>
-Adapted and maintained by Jacob Rosenthal.
+Adapted and maintained by [Jacob Rosenthal](https://github.com/rosenthaljacob).
 
 ## License
 
-react-controlled-form is licensed under the [MIT License](http://opensource.org/licenses/MIT).<br>
+Blitzform is licensed under the [MIT License](http://opensource.org/licenses/MIT).<br>
 Documentation is licensed under [Creative Common License](http://creativecommons.org/licenses/by/4.0/).

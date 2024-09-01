@@ -10,7 +10,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useRcfField, RcfFormProvider } from 'blitzform'
+import { useForm, useBlitzField, BlitzformProvider } from 'blitzform'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
@@ -69,23 +69,23 @@ export default function EditUser({
   return (
     <Container maxWidth="sm">
       <h2>Edit User</h2>
-      {/* RcfFormProvider passes the form context to child components */}
-      <RcfFormProvider ctx={ctx}>
+      {/* BlitzformProvider passes the form context to child components */}
+      <BlitzformProvider ctx={ctx}>
         <form {...formProps} onSubmit={onSubmit}>
           <Stack spacing={2.5}>
-            <RcfTextField name="firstName" label="First Name" />
+            <BlitzTextField name="firstName" label="First Name" />
 
-            <RcfTextField name="lastName" label="Last Name" />
+            <BlitzTextField name="lastName" label="Last Name" />
 
-            <RcfTextField name="email" label="Email" type="email" />
+            <BlitzTextField name="email" label="Email" type="email" />
 
-            <RcfSelect name="permissions" label="Permissions" multiple>
+            <BlitzSelect name="permissions" label="Permissions" multiple>
               {permissionsOptions.map((permission) => (
                 <MenuItem key={permission} value={permission}>
                   {permission}
                 </MenuItem>
               ))}
-            </RcfSelect>
+            </BlitzSelect>
 
             <Button
               type="submit"
@@ -97,13 +97,13 @@ export default function EditUser({
             </Button>
           </Stack>
         </form>
-      </RcfFormProvider>
+      </BlitzformProvider>
     </Container>
   )
 }
 
-// reusable input field for use inside the RcfFormProvider
-function RcfTextField({
+// reusable input field for use inside the BlitzformProvider
+function BlitzTextField({
   name,
   label,
   type = 'text',
@@ -113,7 +113,7 @@ function RcfTextField({
   type?: string
 }) {
   // connect the input to the form state
-  const field = useRcfField(name)
+  const field = useBlitzField(name)
 
   return (
     <FormControl fullWidth>
@@ -129,7 +129,7 @@ function RcfTextField({
 }
 
 // Reusable Select component integrated with react-controlled-form
-function RcfSelect({
+function BlitzSelect({
   name,
   label,
   multiple,
@@ -140,7 +140,7 @@ function RcfSelect({
   multiple?: boolean
   children: React.ReactNode
 }) {
-  const field = useRcfField(name, {
+  const field = useBlitzField(name, {
     // custom parseValue function since default is (e) => e.target.value
     parseValue: (v) => v,
     // custom isEqual function to compare new value to upstream value
@@ -152,7 +152,7 @@ function RcfSelect({
     },
   })
 
-  const labelId = `rcf-select-${name}`
+  const labelId = `blitz-select-${name}`
 
   return (
     <FormControl fullWidth error={!!field.errorMessage}>

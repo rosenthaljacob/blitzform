@@ -1,7 +1,26 @@
 {
   "name": "blitzform",
   "description": "A lightweight yet powerful framework for building dynamic forms in React",
-  "version": "0.0.1-alpha.1",
+  "license": "MIT",
+  "homepage": "https://github.com/rosenthaljacob/blitzform",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rosenthaljacob/blitzform"
+  },
+  "keywords": [
+    "react",
+    "forms",
+    "form-validation",
+    "zod",
+    "form-management",
+    "form-framework",
+    "dynamic-forms",
+    "form-state",
+    "controlled-form",
+    "form-builder",
+    "react-form-library"
+  ],
+  "version": "0.0.1-alpha.5",
   "main": "lib/index.js",
   "module": "es/index.js",
   "typings": "types/index.d.ts",
