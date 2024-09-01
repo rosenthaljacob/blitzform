@@ -13,8 +13,8 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/material": "^5.16.7",
+    "blitzform": "file:..",
     "react": "^18.3.1",
-    "react-controlled-form": "file:..",
     "react-dom": "^18.3.1",
     "react-syntax-highlighter": "^15.5.0"
   },

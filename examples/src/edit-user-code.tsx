@@ -5,8 +5,7 @@ import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascr
 
 SyntaxHighlighter.registerLanguage('javascript', javascript)
 
-const codeString = `
-import React from "react";
+const codeString = `import React from 'react'
 import {
   Container,
   TextField,
@@ -17,29 +16,29 @@ import {
   Select,
   InputLabel,
   Stack,
-} from "@mui/material";
-import { useForm, useRcfField, RcfFormProvider } from "react-controlled-form";
-import { z } from "zod";
+} from '@mui/material'
+import { useForm, useRcfField, RcfFormProvider } from 'blitzform'
+import { z } from 'zod'
 
 const userFormSchema = z.object({
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
+  firstName: z.string().min(1, { message: 'First name is required' }),
+  lastName: z.string().min(1, { message: 'Last name is required' }),
+  email: z.string().email({ message: 'Invalid email address' }),
   permissions: z
     .array(z.string())
-    .min(1, { message: "Please select at least one permission" }),
-});
+    .min(1, { message: 'Please select at least one permission' }),
+})
 
-export type UserType = z.infer<typeof userFormSchema>;
+export type UserType = z.infer<typeof userFormSchema>
 
-const permissionsOptions = ["Read", "Write", "Delete", "Admin"];
+const permissionsOptions = ['Read', 'Write', 'Delete', 'Admin']
 
 export default function EditUser({
   data,
   setData,
 }: {
-  data: UserType;
-  setData: (data: UserType) => void;
+  data: UserType
+  setData: (data: UserType) => void
 }) {
   const {
     ctx,
@@ -54,24 +53,24 @@ export default function EditUser({
     // pass the upstream/initial value, the hook will only store modified (dirty) values
     data,
     {
-      defaultUntouchOn: "focus", // untouch fields on focus
+      defaultUntouchOn: 'focus', // untouch fields on focus
       initTouched: true, // mark all fields as touched initially
     }
-  );
+  )
 
   function handleSubmitSuccess(data: UserType) {
-    setData(data); // update upstream data
-    reset(); // this will clear the useForm diff and the form will show the upstream data
+    setData(data) // update upstream data
+    reset() // this will clear the useForm diff and the form will show the upstream data
   }
 
   function handleSubmitError(error: z.ZodError) {
-    touchAll(); // mark all fields as touched to display validation errors
-    console.log("Error:", error);
+    touchAll() // mark all fields as touched to display validation errors
+    console.log('Error:', error)
   }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    handleSubmit(handleSubmitSuccess, handleSubmitError);
+    e.preventDefault()
+    handleSubmit(handleSubmitSuccess, handleSubmitError)
   }
 
   return (
@@ -107,21 +106,21 @@ export default function EditUser({
         </form>
       </RcfFormProvider>
     </Container>
-  );
+  )
 }
 
 // reusable input field for use inside the RcfFormProvider
 function RcfTextField({
   name,
   label,
-  type = "text",
+  type = 'text',
 }: {
-  name: string;
-  label: string;
-  type?: string;
+  name: string
+  label: string
+  type?: string
 }) {
   // connect the input to the form state
-  const field = useRcfField(name);
+  const field = useRcfField(name)
 
   return (
     <FormControl fullWidth>
@@ -133,7 +132,7 @@ function RcfTextField({
         helperText={field.errorMessage}
       />
     </FormControl>
-  );
+  )
 }
 
 // Reusable Select component integrated with react-controlled-form
@@ -143,10 +142,10 @@ function RcfSelect({
   multiple,
   children,
 }: {
-  name: string;
-  label: string;
-  multiple?: boolean;
-  children: React.ReactNode;
+  name: string
+  label: string
+  multiple?: boolean
+  children: React.ReactNode
 }) {
   const field = useRcfField(name, {
     // custom parseValue function since default is (e) => e.target.value
@@ -154,13 +153,13 @@ function RcfSelect({
     // custom isEqual function to compare new value to upstream value
     isEqual: (a, b) => {
       if (Array.isArray(a) && Array.isArray(b)) {
-        return [...a].sort().join(",") === [...b].sort().join(",");
+        return [...a].sort().join(',') === [...b].sort().join(',')
       }
-      return a === b;
+      return a === b
     },
-  });
+  })
 
-  const labelId = \`rcf-select-\${name}\`;
+  const labelId = \`rcf-select-\${name}\`
 
   return (
     <FormControl fullWidth error={!!field.errorMessage}>
@@ -172,20 +171,17 @@ function RcfSelect({
         multiple={multiple}
         value={field.inputProps.value}
         onChange={(e) => {
-          const value = e.target.value as string | string[];
-          field.inputProps.onChange(value);
-        }}
-      >
+          const value = e.target.value as string | string[]
+          field.inputProps.onChange(value)
+        }}>
         {children}
       </Select>
       {field.errorMessage && (
         <FormHelperText>{field.errorMessage}</FormHelperText>
       )}
     </FormControl>
-  );
-}
-
-`
+  )
+}`
 
 export default function EditUserCode() {
   return (

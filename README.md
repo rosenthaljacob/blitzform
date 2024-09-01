@@ -1,26 +1,26 @@
-# react-controlled-form
+# blitzform
 
 A powerful and extensible React form management framework with a focus on dynamic behavior. Diff based change tracking and baked in [zod](https://zod.dev) validation makes it ideal for dynamic and complex forms.<br />
 You own and control the rendered markup and the hook takes care of the behavior, state and validation.
 
-<img alt="npm version" src="https://badge.fury.io/js/react-controlled-form.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/react-controlled-form.svg"> <a href="https://bundlephobia.com/result?p=react-controlled-form@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/react-controlled-form.svg"></a>
+<img alt="npm version" src="https://badge.fury.io/js/blitzform.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/blitzform.svg"> <a href="https://bundlephobia.com/result?p=blitzform@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/blitzform.svg"></a>
 
 ## Installation
 
 ```sh
 # npm
-npm i --save react-controlled-form
+npm i --save blitzform
 # yarn
-yarn add react-controlled-form
+yarn add blitzform
 # pnpm
-pnpm add react-controlled-form
+pnpm add blitzform
 ```
 
 ## The Gist
 
 ```tsx
 import * as React from 'react'
-import { useForm } from 'react-controlled-form'
+import { useForm } from 'blitzform'
 import { z, ZodError } from 'zod'
 
 // create our schema with validation included
@@ -93,7 +93,7 @@ function Form() {
 
 ## Advanced Example
 
-This section demonstrates a more sophisticated form setup using `react-controlled-form`.
+This section demonstrates a more sophisticated form setup using `blitzform`.
 
 - Dynamic form behavior is controlled through `formDirty` and `formValid`, ensuring the submit button only enables when the form has changes and passes validation.
 - By using RcfFormProvider, we decouple state management from form components. This allows you to create a library of self-managed components.
@@ -112,7 +112,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useRcfField, RcfFormProvider } from 'react-controlled-form'
+import { useForm, useRcfField, RcfFormProvider } from 'blitzform'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
@@ -230,7 +230,7 @@ function RcfTextField({
   )
 }
 
-// Reusable Select component integrated with react-controlled-form
+// Reusable Select component integrated with blitzform
 function RcfSelect({
   name,
   label,
@@ -478,7 +478,7 @@ Can be used only inside a `RcfFormProvider` component. It is similar to `useFiel
 
 ```tsx
 import { TextField, FormControl } from '@mui/material'
-import { useRcfField } from 'react-controlled-form'
+import { useRcfField } from 'blitzform'
 
 function RcfTextField({
   name,
@@ -505,8 +505,13 @@ function RcfTextField({
 }
 ```
 
+## About This Fork
+
+This package was forked from [react-controlled-form](https://github.com/robinweser/react-controlled-form) by [@robinweser](http://weser.io).
+<br>
+Adapted and maintained by Jacob Rosenthal.
+
 ## License
 
 react-controlled-form is licensed under the [MIT License](http://opensource.org/licenses/MIT).<br>
-Documentation is licensed under [Creative Common License](http://creativecommons.org/licenses/by/4.0/).<br>
-Created with ♥ by [@robinweser](http://weser.io) and all the great contributors.
+Documentation is licensed under [Creative Common License](http://creativecommons.org/licenses/by/4.0/).
