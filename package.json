@@ -1,7 +1,13 @@
 {
   "name": "blitzform",
   "description": "A lightweight yet powerful framework for building dynamic forms in React",
-  "version": "0.0.1-alpha.2",
+  "license": "MIT",
+  "homepage": "https://github.com/rosenthaljacob/blitzform",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rosenthaljacob/blitzform"
+  },
+  "version": "0.0.1-alpha.3",
   "main": "lib/index.js",
   "module": "es/index.js",
   "typings": "types/index.d.ts",
