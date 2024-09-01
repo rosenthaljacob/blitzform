@@ -21,7 +21,7 @@ export type UseFormConfig<TSchema extends ZodRawShape> = {
 }
 
 const defaultFormatErrorMessage = (error: ZodError) =>
-  error.errors[0]?.message ?? error.message
+  error.errors?.[0]?.message ?? error.message
 
 export const useForm = <TSchema extends ZodRawShape>(
   schema: ZodObject<TSchema>,
@@ -42,7 +42,7 @@ export const useForm = <TSchema extends ZodRawShape>(
       acc[key] =
         typeof config.initTouched === 'boolean'
           ? config.initTouched
-          : (config.initTouched?.[key] ?? false)
+          : config.initTouched?.[key] ?? false
       return acc
     },
     {} as Record<TFieldName, boolean>
