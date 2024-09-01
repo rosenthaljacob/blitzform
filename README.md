@@ -1,7 +1,8 @@
-# blitzform
+# Blitzform
 
-A powerful and extensible React form management framework with a focus on dynamic behavior. Diff based change tracking and baked in [zod](https://zod.dev) validation makes it ideal for dynamic and complex forms.<br />
-You own and control the rendered markup and the hook takes care of the behavior, state and validation.
+A powerful and extensible React form management framework focused on dynamic behavior. With diff-based change tracking and baked in [zod](https://zod.dev) validation. Blitzform handles form state, behavior, and validation, while you retain full control over the markup.
+<br />
+Implement features like displaying the "Save" button only when the form is modified and valid, or showing error messages contextually based on user interaction.
 
 <img alt="npm version" src="https://badge.fury.io/js/blitzform.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/blitzform.svg"> <a href="https://bundlephobia.com/result?p=blitzform@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/blitzform.svg"></a>
 
@@ -56,7 +57,7 @@ function Form() {
   function onSuccess(data: T_RegisterInput) {
     // do something with the safely parsed data
     console.log(data)
-    // reset the form to its initial state
+    // reset the form to the upstream/initial state
     reset()
   }
 
@@ -93,9 +94,12 @@ function Form() {
 
 ## Advanced Example
 
+[See live](https://rosenthaljacob.github.io/blitzform/)
+
 This section demonstrates a more sophisticated form setup using `blitzform`.
 
 - Dynamic form behavior is controlled through `formDirty` and `formValid`, ensuring the submit button only enables when the form has changes and passes validation.
+- Show error messages only after inputs lose focus, and hide them when focused again.
 - By using BlitzformProvider, we decouple state management from form components. This allows you to create a library of self-managed components.
 - We create reusable `BlitzTextField` and `BlitzSelect` components that can be dropped into any form using the library.
 
@@ -413,7 +417,7 @@ A string containing the validation message. Returns undefined according to if th
 
 ### handleSubmit
 
-It form data using the zod schema. You will likely want to prevent the default form behavior by calling `e.preventDefault()`.
+It validates form data using the zod schema. You will likely want to prevent the default form behavior by calling `e.preventDefault()` as shown below.
 
 | Parameter | Type                             | Description                                        |
 | --------- | -------------------------------- | -------------------------------------------------- |
@@ -441,7 +445,7 @@ const onSubmit = (e) => {
 ### isDirty
 
 Returns whether the form is dirty, meaning that any of the fields was altered compared to their initial state.<br />
-Useful e.g. when conditionally showing a save button or when you want to inform a user that he's closing a modal with unsafed changes.
+Useful e.g. when conditionally showing a save button or when you want to inform a user that they're closing a modal with unsaved changes.
 
 ### formProps
 
@@ -509,9 +513,9 @@ function BlitzTextField({
 
 This package was forked from [react-controlled-form](https://github.com/robinweser/react-controlled-form) by [@robinweser](http://weser.io).
 <br>
-Adapted and maintained by Jacob Rosenthal.
+Adapted and maintained by [Jacob Rosenthal](https://github.com/rosenthaljacob).
 
 ## License
 
-blitzform is licensed under the [MIT License](http://opensource.org/licenses/MIT).<br>
+Blitzform is licensed under the [MIT License](http://opensource.org/licenses/MIT).<br>
 Documentation is licensed under [Creative Common License](http://creativecommons.org/licenses/by/4.0/).
