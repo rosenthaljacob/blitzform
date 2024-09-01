@@ -2,7 +2,7 @@
 
 A powerful and extensible React form management framework focused on dynamic behavior. With diff-based change tracking and baked in [zod](https://zod.dev) validation. Blitzform handles form state, behavior, and validation, while you retain full control over the markup.
 <br />
-Implement features like displaying the "Save" button only when the form is modified and valid, or showing error messages contextually based on user interaction.
+Implement features like displaying the "Save" button only when the form is modified and valid, or showing error messages contextually based on user interaction. [See live](https://rosenthaljacob.github.io/blitzform/)
 
 <img alt="npm version" src="https://badge.fury.io/js/blitzform.svg"> <img alt="npm downloads" src="https://img.shields.io/npm/dm/blitzform.svg"> <a href="https://bundlephobia.com/result?p=blitzform@latest"><img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/blitzform.svg"></a>
 
