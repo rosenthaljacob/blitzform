@@ -7,7 +7,20 @@
     "type": "git",
     "url": "git+https://github.com/rosenthaljacob/blitzform"
   },
-  "version": "0.0.1-alpha.3",
+  "keywords": [
+    "react",
+    "forms",
+    "form-validation",
+    "zod",
+    "form-management",
+    "form-framework",
+    "dynamic-forms",
+    "form-state",
+    "controlled-form",
+    "form-builder",
+    "react-form-library"
+  ],
+  "version": "0.0.1-alpha.4",
   "main": "lib/index.js",
   "module": "es/index.js",
   "typings": "types/index.d.ts",
