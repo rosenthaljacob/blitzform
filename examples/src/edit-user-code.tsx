@@ -135,7 +135,7 @@ function BlitzTextField({
   )
 }
 
-// Reusable Select component integrated with react-controlled-form
+// Reusable Select component integrated with Blitzform
 function BlitzSelect({
   name,
   label,
