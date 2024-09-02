@@ -10,7 +10,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useBlitzField, BlitzformProvider } from 'blitzform'
+import { useForm, useField, BlitzformProvider } from 'blitzform'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
@@ -113,7 +113,7 @@ function BlitzTextField({
   type?: string
 }) {
   // connect the input to the form state
-  const field = useBlitzField(name)
+  const field = useField(name)
 
   return (
     <FormControl fullWidth>
@@ -128,7 +128,7 @@ function BlitzTextField({
   )
 }
 
-// Reusable Select component integrated with react-controlled-form
+// Reusable Select component integrated with Blitzform
 function BlitzSelect({
   name,
   label,
@@ -140,7 +140,7 @@ function BlitzSelect({
   multiple?: boolean
   children: React.ReactNode
 }) {
-  const field = useBlitzField(name, {
+  const field = useField(name, {
     // custom parseValue function since default is (e) => e.target.value
     parseValue: (v) => v,
     // custom isEqual function to compare new value to upstream value
