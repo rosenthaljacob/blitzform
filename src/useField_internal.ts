@@ -72,7 +72,7 @@ type UseField = <
 
 const defaultIsEqual = (a: unknown, b: unknown) => a === b
 
-const useField: UseField = (ctx, name, options = {}) => {
+const useField_internal: UseField = (ctx, name, options = {}) => {
   const {
     schema,
     formValues,
@@ -136,7 +136,7 @@ const useField: UseField = (ctx, name, options = {}) => {
 
   const inputProps: FieldInputProps<typeof onChange> = {
     value: getValue(name),
-    disabled: disabled ? true : (disabledIf?.(formValues) ?? false),
+    disabled: disabled ? true : disabledIf?.(formValues) ?? false,
     required: !schema.shape[name].isOptional(),
     name: name as string,
     'data-valid': valid,
@@ -156,4 +156,4 @@ const useField: UseField = (ctx, name, options = {}) => {
   }
 }
 
-export default useField
+export default useField_internal

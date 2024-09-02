@@ -1,10 +1,10 @@
 import { createContext, useContext, type PropsWithChildren } from 'react'
 import { ZodRawShape } from 'zod'
-import useField, {
+import useField_internal, {
   type UseFieldCtx,
   type UseFieldOptions,
   type FieldProps,
-} from './useField'
+} from './useField_internal'
 
 const BlitzformContext = createContext<UseFieldCtx<ZodRawShape> | undefined>(
   undefined
@@ -21,7 +21,7 @@ export function BlitzformProvider({
   )
 }
 
-export function useBlitzField<TChangeFn extends (...args: any[]) => any>(
+export function useField<TChangeFn extends (...args: any[]) => any>(
   name: string,
   options?: UseFieldOptions<TChangeFn>
 ): FieldProps<ReturnType<TChangeFn>, TChangeFn> {
@@ -29,5 +29,5 @@ export function useBlitzField<TChangeFn extends (...args: any[]) => any>(
   if (!ctx) {
     throw new Error('useBlitzformField must be used within a BlitzformProvider')
   }
-  return useField(ctx, name, options)
+  return useField_internal(ctx, name, options)
 }

@@ -38,7 +38,7 @@ type T_RegisterInput = z.infer<typeof Z_RegisterInput>
 
 function Form() {
   // we create a form by passing the schema
-  const { useField, handleSubmit, formProps, reset, touchAll } = useForm(
+  const { useFormField, handleSubmit, formProps, reset, touchAll } = useForm(
     Z_RegisterInput,
     // pass an upstream/initial value, the hook will only store modified (dirty) values
     {
@@ -50,9 +50,9 @@ function Form() {
 
   // now we can create our fields for each property
   // the field controls the state and validation per property
-  const name = useField('name')
-  const email = useField('email')
-  const password = useField('password')
+  const name = useFormField('name')
+  const email = useFormField('email')
+  const password = useFormField('password')
 
   function onSuccess(data: T_RegisterInput) {
     // do something with the safely parsed data
@@ -116,7 +116,7 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material'
-import { useForm, useBlitzField, BlitzformProvider } from 'blitzform'
+import { useForm, useField, BlitzformProvider } from 'blitzform'
 import { z } from 'zod'
 
 const userFormSchema = z.object({
@@ -219,7 +219,7 @@ function BlitzTextField({
   type?: string
 }) {
   // connect the input to the form state
-  const field = useBlitzField(name)
+  const field = useField(name)
 
   return (
     <FormControl fullWidth>
@@ -246,7 +246,7 @@ function BlitzSelect({
   multiple?: boolean
   children: React.ReactNode
 }) {
-  const field = useBlitzField(name, {
+  const field = useField(name, {
     // custom parseValue function since default is (e) => e.target.value
     parseValue: (v) => v,
     // custom isEqual function to compare new value to upstream value
@@ -310,110 +310,35 @@ const Z_Input = z.object({
 type T_Input = z.infer<typeof Z_Input>
 
 // usage inside react components
-const const { useField, handleSubmit, formProps, reset, touchAll } = useForm(Z_Input, {})
+const const { useFormField, handleSubmit, formProps, reset, touchAll } = useForm(Z_Input, {})
 ```
 
 #### Config
 
-| Parameter               | Type                                                   | Default                                                  | Description                                                                                                                                                                                                                         |
-| ----------------------- | ------------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| formatErrorMessage      | `(error: ZodIssue, name: string) => string`            | `(error) => error.errors?.[0]?.message ?? error.message` | Customizes error messages. This formatter processes the raw zod issue to create a more localized or user friendly message.                                                                                                          |
-| isEqual                 | `<Record<keyof TSchema, (a: any, b: any) => boolean>>` | `{}`                                                     | Allows deep equality checks for specific fields. Useful when working with arrays, objects, or custom data structures where the default `===` comparison may not be sufficient. Example: Compare sorted arrays for equality.         |
-| initTouched             | `boolean` \| `Record<keyof TSchema, boolean>`          | `false`                                                  | Specifies the initial touched state of fields. Set to `true` to touch all fields by default, or provide an object to touch specific fields. This is beneficial for pre-filled forms where validation should be immediately visible. |
-| defaultShowValidationOn | `touched` \| `always`                                  | `touched`                                                | Determines when to display validation errors. Choose between showing errors when a field is touched or always showing them.                                                                                                         |
-| defaultUntouchOn        | `focus` \| `change` \| `never`                         | `focus`                                                  | Controls when a field should be marked as untouched, allowing you to reset validation states on focus, change, or never.                                                                                                            |
+| Parameter                                 | Type                                                   | Default                                                  | Description                                                                                                                                                                                                                         |
+| ----------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [formatErrorMessage](#formaterrormessage) | `(error: ZodIssue, name: string) => string`            | `(error) => error.errors?.[0]?.message ?? error.message` | Customizes error messages. This formatter processes the raw zod issue to create a more localized or user friendly message.                                                                                                          |
+| [isEqual](#isEqual)                       | `<Record<keyof TSchema, (a: any, b: any) => boolean>>` | `{}`                                                     | Allows deep equality checks for specific fields. Useful when working with arrays, objects, or custom data structures where the default `===` comparison may not be sufficient. Example: Compare sorted arrays for equality.         |
+| initTouched                               | `boolean` \| `Record<keyof TSchema, boolean>`          | `false`                                                  | Specifies the initial touched state of fields. Set to `true` to touch all fields by default, or provide an object to touch specific fields. This is beneficial for pre-filled forms where validation should be immediately visible. |
+| defaultShowValidationOn                   | `touched` \| `always`                                  | `touched`                                                | Determines when to display validation errors. Choose between showing errors when a field is touched or always showing them.                                                                                                         |
+| defaultUntouchOn                          | `focus` \| `change` \| `never`                         | `focus`                                                  | Controls when a field should be marked as untouched, allowing you to reset validation states on focus, change, or never.                                                                                                            |
 
 #### formatErrorMessage
 
 The preferred way to handle custom error messages would be to add them to the schema directly.<br />
 In some cases e.g. when receiving the schema from an API or when having to localise the error, we can leverage this helper.
 
-```ts
-import { ZodIssue } from 'zod'
-
-// Note: the type is ZodIssue and not ZodError since we always only show the first error
-function formatErrorMessage(error: ZodIssue, name: string) {
-  switch (error.code) {
-    case 'too_small':
-      return `This field ${name} requires at least ${error.minimum} characters.`
-    default:
-      return error.message
-  }
-}
-```
-
 #### isEqual
 
 An object where deep equal checks can be defined for specific fields. This can be used when the default `(a, b) => a === b` check is not sufficient, such as when handling arrays or objects.
 
 ```ts
-const { handleSubmit, touchAll, formProps, reset, formDirty, formValid } =
-  useForm(
-    schema,
-    {},
-    {
-      isEqual: {
-        permissions: (a, b) =>
-          [...a].sort().join(',') === [...b].sort().join(','),
-      },
-    }
-  )
+const form = useForm(schema, upstreamData, {
+  isEqual: {
+    permissions: (a, b) => [...a].sort().join(',') === [...b].sort().join(','),
+  },
+})
 ```
-
-### useField
-
-The `useField` hook manages the state, validation, and interaction of individual form fields. It returns a set of HTML attributes and properties to connect the field to form elements while handling error management, touch state, and dynamic behavior.
-
-| Parameter | Type                           | Default               | Description                                                 |
-| --------- | ------------------------------ | --------------------- | ----------------------------------------------------------- |
-| name      | `keyof z.infer<typeof schema>` |                       | The name of the schema property that this field connects to |
-| config    | [Config](#config)              | See [Config](#config) | Initial field data and additional config options            |
-
-#### Config
-
-| Property         | Type                                  | Default                 | Description                                                                                                                                                 |
-| ---------------- | ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| disabled         | `boolean`                             | `false`                 | Disables the field when true.                                                                                                                               |
-| disabledIf       | `(formState: TSchema) => boolean`     | `undefined`             | Dynamically disables the field based on the current form state.                                                                                             |
-| showValidationOn | `"touched"` \| `"always"`             | `"touched"`             | Specifies when validation errors are displayed—either after the field is touched or continuously.                                                           |
-| unTouchOn        | `"focus"` \| `"change"` \| `"never"`  | `"focus"`               | Configures when the field should be marked as untouched. This option can reset validation states based on focus, change, or be disabled entirely (`never`). |
-| parseValue       | `(Event) => any`                      | `(e) => e.target.value` | Parses the value from the event before storing it in the field state. Useful for custom inputs like checkboxes or non-string values.                        |
-| isEqual          | `(a: unknown, b: unknown) => boolean` | `(a, b) => a === b`     | Provides a custom comparison function to determine whether the field value has changed from its upstream value, crucial for complex data structures.        |
-
-#### disabledIf
-
-The `disabledIf` option allows you to dynamically disable a field based on the current form state. This is particularly useful for conditional fields that depend on other form values.
-
-```ts
-const { inputProps, errorMessage, dirty, valid, touched, disabled } = useField(
-  'email',
-  {
-    disabledIf: (formState) => formState.role === 'admin',
-  }
-)
-```
-
-#### inputProps
-
-Pass these to native HTML `input`, `select` and `textarea` elements.<br />
-Use `data-valid` to style the element based on the validation state.
-
-```ts
-export type FieldInputProps<TChangeFn> = {
-  value: any
-  disabled: boolean
-  required: boolean
-  name: string
-  'data-valid': boolean
-  onChange: TChangeFn // Default: (e: ChangeEvent<HTMLElement>) => string unless specified otherwise
-  onBlur: () => void
-  onFocus: () => void
-}
-```
-
-#### errorMessage
-
-A string containing the validation message. Returns undefined according to if the field is valid, touched and the `showValidationOn` setting.
 
 ### handleSubmit
 
@@ -442,10 +367,14 @@ const onSubmit = (e) => {
 }
 ```
 
-### isDirty
+### formDirty
 
-Returns whether the form is dirty, meaning that any of the fields was altered compared to their initial state.<br />
+Whether the form is dirty, meaning that any of the fields was altered compared to the upstream state.<br />
 Useful e.g. when conditionally showing a save button or when you want to inform a user that they're closing a modal with unsaved changes.
+
+### formValid
+
+If all fields are valid according to the schema.
 
 ### formProps
 
@@ -457,6 +386,111 @@ const formProps = {
   noValidate: true,
 }
 ```
+
+### useFormField
+
+The `useFormField` hook acts like the `useField` but does but shares the form context and schema types with the `useForm` hook and therefore does not need to be inside a `BlitzformProvider`.
+
+#### Usage
+
+```ts
+const { useFormField } = useForm(schema, upstreamData)
+
+const { inputProps, errorMessage, dirty, valid, touched, disabled } =
+  useFormField('email')
+```
+
+See [useField API Reference](#usefield-api-reference).
+
+## useField
+
+The `useField` hook manages the state, validation, and interaction of individual form fields. It returns a set of HTML attributes and properties to connect the field to form elements while handling error management, touch state, and dynamic behavior. Can be used only inside a `BlitzformProvider`.
+
+```tsx
+import { TextField } from '@mui/material'
+import { useBlitzField } from 'blitzform'
+
+function BlitzTextField({
+  name,
+  label,
+  type = 'text',
+}: {
+  name: string
+  label: string
+  type?: string
+}) {
+  const field = useField(name)
+
+  return (
+    <TextField
+      {...field.inputProps}
+      type={type}
+      label={label}
+      error={!!field.errorMessage}
+      helperText={field.errorMessage}
+    />
+  )
+}
+```
+
+> useField can be used to create custom reusable form components that can be dropped into any form using the `blitzform` library.
+
+### useField API Reference
+
+| Parameter | Type                           | Default               | Description                                                 |
+| --------- | ------------------------------ | --------------------- | ----------------------------------------------------------- |
+| name      | `keyof z.infer<typeof schema>` |                       | The name of the schema property that this field connects to |
+| config    | [Config](#config)              | See [Config](#config) | Initial field data and additional config options            |
+
+### Config
+
+| Property                  | Type                                  | Default                 | Description                                                                                                                                                 |
+| ------------------------- | ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| disabled                  | `boolean`                             | `false`                 | Disables the field when true.                                                                                                                               |
+| [disabledIf](#disabledif) | `(formState: TSchema) => boolean`     | `undefined`             | Dynamically disables the field based on the current form state.                                                                                             |
+| showValidationOn          | `"touched"` \| `"always"`             | `"touched"`             | Specifies when validation errors are displayed—either after the field is touched or continuously.                                                           |
+| unTouchOn                 | `"focus"` \| `"change"` \| `"never"`  | `"focus"`               | Configures when the field should be marked as untouched. This option can reset validation states based on focus, change, or be disabled entirely (`never`). |
+| parseValue                | `(Event) => any`                      | `(e) => e.target.value` | Parses the value from the event before storing it in the field state. Useful for custom inputs like checkboxes or non-string values.                        |
+| isEqual                   | `(a: unknown, b: unknown) => boolean` | `(a, b) => a === b`     | Provides a custom comparison function to determine whether the field value has changed from its upstream value, crucial for complex data structures.        |
+
+#### disabledIf
+
+The `disabledIf` option allows you to dynamically disable a field based on the current form state. This is particularly useful for conditional fields that depend on other form values.
+
+```ts
+const field = useField('permissions', {
+  disabledIf: (formState) => formState.role === 'admin',
+})
+```
+
+### Usage
+
+```tsx
+const { inputProps, errorMessage, dirty, valid, touched, disabled } =
+  useField('email')
+```
+
+### inputProps
+
+Pass these to native HTML `input`, `select` and `textarea` elements.<br />
+Use `data-valid` to style the element based on the validation state.
+
+```ts
+export type FieldInputProps<TChangeFn> = {
+  value: any
+  disabled: boolean
+  required: boolean
+  name: string
+  'data-valid': boolean
+  onChange: TChangeFn // Default: (e: ChangeEvent<HTMLElement>) => string overridden by config.parseValue
+  onBlur: () => void
+  onFocus: () => void
+}
+```
+
+### errorMessage
+
+A string containing the validation message. Returns undefined according to if the field is valid, touched and the `showValidationOn` setting.
 
 ## BlitzformProvider
 
@@ -472,39 +506,6 @@ function Form() {
     <BlitzformProvider ctx={ctx}>
       <BlitzTextField name="firstName" label="First Name" />
     </BlitzformProvider>
-  )
-}
-```
-
-### useBlitzField
-
-Can be used only inside a `BlitzformProvider` component. It is similar to `useField` although does not share the schema types.
-
-```tsx
-import { TextField, FormControl } from '@mui/material'
-import { useBlitzField } from 'blitzform'
-
-function BlitzTextField({
-  name,
-  label,
-  type = 'text',
-}: {
-  name: string
-  label: string
-  type?: string
-}) {
-  const field = useBlitzField(name)
-
-  return (
-    <FormControl fullWidth>
-      <TextField
-        {...field.inputProps}
-        type={type}
-        label={label}
-        error={!!field.errorMessage}
-        helperText={field.errorMessage}
-      />
-    </FormControl>
   )
 }
 ```

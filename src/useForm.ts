@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { z, ZodObject, ZodError, ZodRawShape } from 'zod'
-import useField, {
+import useField_internal, {
   UseFieldCtx,
   UseFieldOptions,
   ShowValidationOn,
   UntouchOn,
-} from './useField'
+} from './useField_internal'
 
 export type FormHandleSubmit<TSchema extends ZodRawShape> = (
   onSubmit: (data: z.infer<ZodObject<TSchema>>) => void,
@@ -148,7 +148,7 @@ export const useForm = <TSchema extends ZodRawShape>(
     handleSubmit,
     touchAll,
     resetTouched,
-    useField: <
+    useFormField: <
       TName extends TFieldName,
       TChangeFn extends (
         ...args: any[]
@@ -158,6 +158,6 @@ export const useForm = <TSchema extends ZodRawShape>(
     >(
       name: TName,
       options?: UseFieldOptions<TChangeFn, TSchema>
-    ) => useField(ctx, name, options),
+    ) => useField_internal(ctx, name, options),
   }
 }
