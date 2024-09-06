@@ -5,7 +5,7 @@
     "strict": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "jsx": "preserve"
+    "jsx": "react-jsx"
   },
   "exclude": ["node_modules", "es", "lib", "types", "examples"]
 }

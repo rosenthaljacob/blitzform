@@ -1,6 +1,6 @@
 {
   "name": "blitzform",
-  "version": "0.0.1-alpha.6",
+  "version": "1.0.1",
   "description": "A lightweight and extensible framework for building dynamic forms in React",
   "license": "MIT",
   "homepage": "https://github.com/rosenthaljacob/blitzform",
